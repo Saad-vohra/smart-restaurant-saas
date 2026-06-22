@@ -22,7 +22,11 @@ const corsOptions = {
 
 const io = new Server(server, { cors: corsOptions });
 
-app.use(cors(corsOptions));
+//app.use(cors(corsOptions));
+app.use(cors({
+ origin: process.env.FRONTEND_URL,
+ credentials:true
+}));
 app.use(express.json());
 
 app.set('io', io);
