@@ -1338,14 +1338,14 @@ tbody tr:hover { background: #FAFAFA; }
 
 
 /* =====================================
-   WAITER MOBILE RESPONSIVE UI
+   FINAL WAITER MOBILE RESPONSIVE UI
 ===================================== */
 
 
-@media(max-width:768px){
+@media (max-width:768px){
 
 
-/* REMOVE DESKTOP SIDEBAR SPACE */
+/* MAIN LAYOUT */
 
 .app-layout{
 
@@ -1355,20 +1355,292 @@ display:block;
 
 
 
-.sidebar{
+/* MOBILE HEADER */
 
-display:none;
+.mobile-topbar{
+
+display:flex;
+
+align-items:center;
+
+gap:12px;
+
+height:55px;
+
+padding:0 16px;
+
+background:#1A202C;
+
+color:white;
+
+position:sticky;
+
+top:0;
+
+z-index:200;
+
 
 }
 
 
 
-/* FULL WIDTH CONTENT */
+.hamburger-btn{
+
+
+background:none;
+
+border:none;
+
+color:white;
+
+font-size:24px;
+
+cursor:pointer;
+
+
+}
+
+
+.mobile-topbar-title{
+
+
+font-size:18px;
+
+font-weight:700;
+
+
+}
+
+
+
+
+
+
+/* SIDEBAR MOBILE DRAWER */
+
+
+.sidebar{
+
+
+display:flex !important;
+
+width:260px;
+
+
+position:fixed;
+
+top:0;
+
+left:0;
+
+
+height:100vh;
+
+
+transform:translateX(-100%);
+
+
+transition:0.3s ease;
+
+
+z-index:1000;
+
+
+}
+
+
+
+.sidebar.open{
+
+
+transform:translateX(0);
+
+
+}
+
+
+
+
+
+/* DARK BACKGROUND WHEN MENU OPEN */
+
+
+.sidebar-backdrop{
+
+
+position:fixed;
+
+inset:0;
+
+background:rgba(0,0,0,.45);
+
+z-index:999;
+
+
+}
+
+
+
+
+
+
+/* CONTENT */
+
 
 .main-content{
 
 
-width:100% !important;
+margin-left:0;
+
+
+width:100%;
+
+
+min-height:100vh;
+
+
+}
+
+
+
+
+.page-body{
+
+
+padding:14px;
+
+
+}
+
+
+
+/* HEADER */
+
+
+.page-header{
+
+
+padding:14px 16px;
+
+
+}
+
+
+
+.page-header h1{
+
+
+font-size:1.2rem;
+
+
+}
+
+
+
+
+
+
+/* WAITER TABLE GRID */
+
+
+.wt-grid{
+
+
+display:grid;
+
+
+grid-template-columns:repeat(3,1fr);
+
+
+gap:10px;
+
+
+}
+
+
+
+
+
+
+
+/* TABLE CARD */
+
+
+.wt-card{
+
+
+min-height:115px;
+
+
+padding:12px 6px;
+
+
+border-radius:14px;
+
+
+}
+
+
+
+.wt-card-number{
+
+
+font-size:1.5rem;
+
+
+}
+
+
+
+.wt-card-label{
+
+
+font-size:8px;
+
+
+}
+
+
+
+.wt-card-status{
+
+
+font-size:13px;
+
+
+}
+
+
+
+.wt-card-cap{
+
+
+font-size:10px;
+
+
+}
+
+
+
+.wt-card-cta{
+
+
+display:none;
+
+
+}
+
+
+
+
+
+/* HINT BOX */
+
+
+.wt-hint{
+
+
+font-size:12px;
 
 
 padding:12px;
@@ -1381,66 +1653,6 @@ padding:12px;
 
 
 
-/* MOBILE TOP BAR */
-
-
-.main-content::before{
-
-
-content:"☰     🍽 Delight";
-
-
-display:flex;
-
-
-align-items:center;
-
-
-height:55px;
-
-
-background:#111827;
-
-
-color:white;
-
-
-font-size:20px;
-
-
-font-weight:700;
-
-
-padding-left:15px;
-
-
-border-radius:0 0 15px 15px;
-
-
-margin:-12px -12px 15px -12px;
-
-
-}
-
-
-
-
-
-/* TABLE GRID */
-
-
-.tables-grid{
-
-
-display:grid !important;
-
-
-grid-template-columns:repeat(2,1fr) !important;
-
-
-gap:14px !important;
-
-
 }
 
 
@@ -1448,92 +1660,44 @@ gap:14px !important;
 
 
 
-/* TABLE CARD */
+/* SMALL PHONE */
 
-
-.table-card{
-
-
-width:100% !important;
-
-
-height:150px !important;
-
-
-border-radius:18px !important;
-
-
-padding:12px !important;
-
-
-}
-
-
-
-
-.table-card h1,
-.table-card h2{
-
-
-font-size:32px !important;
-
-
-}
-
-
-
-.table-card p{
-
-
-font-size:14px;
-
-
-}
-
-
-
-}
-
-
-
-
-
-
-
-/* SMALL MOBILE */
 
 @media(max-width:420px){
 
 
 
-.tables-grid{
+.wt-grid{
 
 
-gap:10px !important;
+grid-template-columns:repeat(3,1fr);
 
 
-}
-
-
-
-.table-card{
-
-
-height:135px !important;
+gap:8px;
 
 
 }
 
 
 
-.table-card h1,
-.table-card h2{
+.wt-card{
 
 
-font-size:26px !important;
+min-height:100px;
 
 
 }
+
+
+
+.wt-card-number{
+
+
+font-size:1.3rem;
+
+
+}
+
 
 
 }
