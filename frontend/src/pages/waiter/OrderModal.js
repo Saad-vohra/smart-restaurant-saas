@@ -1,3 +1,262 @@
+// import React, { useEffect, useState } from 'react';
+// import axios from 'axios';
+// import toast from 'react-hot-toast';
+// import { useAuth } from '../../context/AuthContext';
+
+// const CATEGORIES = ['All', 'Starters', 'Main Course', 'Drinks', 'Desserts', 'Fast Food', 'Special Items'];
+
+// export default function OrderModal({ table, onClose, onSuccess }) {
+//   const { user } = useAuth();
+//   const [menuItems, setMenuItems] = useState([]);
+//   const [cart, setCart] = useState([]);
+//   const [activeCategory, setActiveCategory] = useState('All');
+//   const [search, setSearch] = useState('');
+//   const [noteModal, setNoteModal] = useState(null);
+//   const [noteText, setNoteText] = useState('');
+//   const [existingOrder, setExistingOrder] = useState(null);
+//   const [loading, setLoading] = useState(false);
+
+//   useEffect(() => {
+//     axios.get('/api/menu?available=true').then(r => setMenuItems(r.data));
+//     // Load existing order if table is occupied
+//     if (table.status === 'occupied') {
+//       axios.get(`/api/orders?active=true`).then(r => {
+//         const found = r.data.find(o => o.tableNumber === table.tableNumber);
+//         if (found) {
+//           setExistingOrder(found);
+//           setCart(found.items.map(i => ({ ...i, id: i._id || Math.random() })));
+//         }
+//       });
+//     }
+//   }, [table]);
+
+//   const filtered = menuItems.filter(i =>
+//     (activeCategory === 'All' || i.category === activeCategory) &&
+//     i.name.toLowerCase().includes(search.toLowerCase())
+//   );
+
+//   const addToCart = (item) => {
+//     setCart(prev => {
+//       const existing = prev.find(c => c.menuItemId === item._id || c.name === item.name);
+//       if (existing) {
+//         return prev.map(c => (c.name === item.name ? { ...c, quantity: c.quantity + 1 } : c));
+//       }
+//       return [...prev, { menuItemId: item._id, name: item.name, price: item.price, quantity: 1, notes: '' }];
+//     });
+//   };
+
+//   const updateQty = (name, delta) => {
+//     setCart(prev => {
+//       const updated = prev.map(c => c.name === name ? { ...c, quantity: c.quantity + delta } : c);
+//       return updated.filter(c => c.quantity > 0);
+//     });
+//   };
+
+//   const openNote = (item) => {
+//     setNoteModal(item.name);
+//     setNoteText(item.notes || '');
+//   };
+
+//   const saveNote = () => {
+//     setCart(prev => prev.map(c => c.name === noteModal ? { ...c, notes: noteText } : c));
+//     setNoteModal(null);
+//   };
+
+//   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+
+//   const handleSubmit = async () => {
+//     if (cart.length === 0) { toast.error('Add at least one item'); return; }
+//     setLoading(true);
+//     try {
+//       if (existingOrder) {
+//         await axios.put(`/api/orders/${existingOrder._id}`, { items: cart, status: 'pending' });
+//         toast.success('Order updated & sent to kitchen!');
+//       } else {
+//         await axios.post('/api/orders', {
+//           tableId: table._id,
+//           tableNumber: table.tableNumber,
+//           items: cart,
+//           customerCount: table.customerCount || 1,
+//         });
+//         toast.success('Order placed & sent to kitchen!');
+//       }
+//       onSuccess();
+//     } catch (err) {
+//       toast.error(err.response?.data?.message || 'Error placing order');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const catColors = {
+//     'Starters': '#FF6B35', 'Main Course': '#3182ce', 'Drinks': '#38a169',
+//     'Desserts': '#805ad5', 'Fast Food': '#e53e3e', 'Special Items': '#ED8936'
+//   };
+
+//   return (
+//     <div className="modal-overlay" style={{ alignItems: 'stretch', padding: 0 }}>
+//       <div style={{ display: 'flex', width: '100%', height: '100vh', background: 'white', position: 'relative' }}>
+//         {/* Left: Menu */}
+//         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid #E2E8F0', overflow: 'hidden' }}>
+//           <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', background: 'white' }}>
+//             <div className="flex-between">
+//               <h2 style={{ fontFamily: 'Inter', fontSize: '1.1rem', fontWeight: 700 }}>
+//                 🍽️ Menu — Table T{table.tableNumber}
+//                 {table.customerCount && <span className="text-muted text-sm" style={{ marginLeft: 8 }}>({table.customerCount} guests)</span>}
+//               </h2>
+//               <button className="btn btn-ghost btn-sm" onClick={onClose}>✕ Close</button>
+//             </div>
+//             <div style={{ marginTop: 12 }}>
+//               <input className="form-input" placeholder="Search menu..." value={search}
+//                 onChange={e => setSearch(e.target.value)} style={{ marginBottom: 10 }} />
+//               <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+//                 {CATEGORIES.map(cat => (
+//                   <button key={cat} onClick={() => setActiveCategory(cat)}
+//                     className={`btn btn-sm ${activeCategory === cat ? 'btn-primary' : 'btn-ghost'}`}
+//                     style={{ whiteSpace: 'nowrap', fontSize: 12 }}>{cat}</button>
+//                 ))}
+//               </div>
+//             </div>
+//           </div>
+
+//           <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+//             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+//               {filtered.map(item => {
+//                 const inCart = cart.find(c => c.name === item.name);
+//                 return (
+//                   <div key={item._id} style={{
+//                     border: `2px solid ${inCart ? '#FF6B35' : '#E2E8F0'}`,
+//                     borderRadius: 10, padding: 14, background: inCart ? '#fff3ee' : 'white',
+//                     transition: 'all 0.2s', cursor: 'pointer'
+//                   }}>
+//                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+//                       <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: catColors[item.category] || '#718096', letterSpacing: '0.05em' }}>{item.category}</div>
+//                       <strong style={{ color: '#FF6B35', fontSize: 14 }}>₹{item.price}</strong>
+//                     </div>
+//                     <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>{item.name}</div>
+//                     <div style={{ fontSize: 11, color: '#718096', marginBottom: 10 }}>{item.description}</div>
+//                     {inCart ? (
+//                       <div className="qty-control" style={{ justifyContent: 'center' }}>
+//                         <button className="qty-btn" onClick={() => updateQty(item.name, -1)}>−</button>
+//                         <span className="qty-num">{inCart.quantity}</span>
+//                         <button className="qty-btn" onClick={() => updateQty(item.name, 1)}>+</button>
+//                       </div>
+//                     ) : (
+//                       <button className="btn btn-primary w-full" style={{ fontSize: 12, padding: '6px 10px' }} onClick={() => addToCart(item)}>
+//                         + Add
+//                       </button>
+//                     )}
+//                   </div>
+//                 );
+//               })}
+//             </div>
+//             {filtered.length === 0 && <div className="empty-state"><p>No items found</p></div>}
+//           </div>
+//         </div>
+
+//         {/* Right: Cart */}
+//         <div style={{ width: 340, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+//           <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
+//             <h3 style={{ fontFamily: 'Inter', fontWeight: 700, fontSize: '1rem' }}>
+//               🛒 Order Cart <span className="text-muted text-sm">({cart.length} items)</span>
+//             </h3>
+//           </div>
+
+//           <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+//             {cart.length === 0 ? (
+//               <div className="empty-state" style={{ padding: '40px 20px' }}>
+//                 <div className="icon">🛒</div>
+//                 <p className="text-sm">No items added yet.<br />Select from menu.</p>
+//               </div>
+//             ) : (
+//               cart.map(item => (
+//                 <div key={item.name} className="cart-item" style={{ padding: '10px 0' }}>
+//                   <div style={{ flex: 1 }}>
+//                     <div style={{ fontWeight: 600, fontSize: 13 }}>{item.name}</div>
+//                     <div style={{ fontSize: 12, color: '#718096' }}>₹{item.price} each</div>
+//                     {item.notes && (
+//                       <div style={{ fontSize: 11, color: '#FF6B35', fontStyle: 'italic', marginTop: 2 }}>
+//                         📝 {item.notes}
+//                       </div>
+//                     )}
+//                     <button onClick={() => openNote(item)} style={{ fontSize: 11, color: '#3182ce', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', marginTop: 2 }}>
+//                       {item.notes ? '✏️ Edit note' : '+ Add note'}
+//                     </button>
+//                   </div>
+//                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+//                     <div className="qty-control">
+//                       <button className="qty-btn" style={{ width: 24, height: 24 }} onClick={() => updateQty(item.name, -1)}>−</button>
+//                       <span className="qty-num" style={{ fontSize: 13 }}>{item.quantity}</span>
+//                       <button className="qty-btn" style={{ width: 24, height: 24 }} onClick={() => updateQty(item.name, 1)}>+</button>
+//                     </div>
+//                     <strong style={{ fontSize: 13, color: '#FF6B35' }}>₹{item.price * item.quantity}</strong>
+//                   </div>
+//                 </div>
+//               ))
+//             )}
+//           </div>
+
+//           <div style={{ padding: 16, borderTop: '1px solid #E2E8F0' }}>
+//             <div className="flex-between" style={{ marginBottom: 8, fontSize: 13 }}>
+//               <span className="text-muted">Subtotal</span><span>₹{cartTotal}</span>
+//             </div>
+//             <div className="flex-between" style={{ marginBottom: 12, fontSize: 13 }}>
+//               <span className="text-muted">GST (5%)</span><span>₹{Math.round(cartTotal * 0.05)}</span>
+//             </div>
+//             <div className="flex-between font-bold" style={{ fontSize: '1rem', marginBottom: 16 }}>
+//               <span>Total</span><span style={{ color: '#FF6B35' }}>₹{cartTotal + Math.round(cartTotal * 0.05)}</span>
+//             </div>
+//             <button className="btn btn-primary w-full btn-lg" onClick={handleSubmit} disabled={loading || cart.length === 0}>
+//               {loading ? 'Sending...' : existingOrder ? '🔄 Update Order' : '✅ Send to Kitchen'}
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Note modal */}
+//       {noteModal && (
+//         <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setNoteModal(null)}>
+//           <div className="modal" style={{ maxWidth: 380 }} onClick={e => e.stopPropagation()}>
+//             <div className="modal-header">
+//               <h3>📝 Special Instructions</h3>
+//               <button className="btn btn-ghost btn-sm" onClick={() => setNoteModal(null)}>✕</button>
+//             </div>
+//             <div className="modal-body">
+//               <p className="text-sm text-muted" style={{ marginBottom: 12 }}>For: <strong>{noteModal}</strong></p>
+//               <textarea className="form-textarea" placeholder="e.g. Extra spicy, No onion, Less oil, Jain preparation..."
+//                 value={noteText} onChange={e => setNoteText(e.target.value)} style={{ height: 100 }} autoFocus />
+//               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+//                 {['Extra spicy', 'Less spicy', 'No onion', 'Less oil', 'Less salt', 'Jain preparation', 'Pack separately', 'Well done'].map(s => (
+//                   <button key={s} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}
+//                     onClick={() => setNoteText(p => p ? p + ', ' + s : s)}>{s}</button>
+//                 ))}
+//               </div>
+//             </div>
+//             <div className="modal-footer">
+//               <button className="btn btn-ghost" onClick={() => { setNoteText(''); setNoteModal(null); }}>Clear</button>
+//               <button className="btn btn-primary" onClick={saveNote}>Save Note</button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -5,22 +264,31 @@ import { useAuth } from '../../context/AuthContext';
 
 const CATEGORIES = ['All', 'Starters', 'Main Course', 'Drinks', 'Desserts', 'Fast Food', 'Special Items'];
 
+const CAT_COLORS = {
+  'Starters':      '#FF6B35',
+  'Main Course':   '#3182ce',
+  'Drinks':        '#38a169',
+  'Desserts':      '#805ad5',
+  'Fast Food':     '#e53e3e',
+  'Special Items': '#ED8936',
+};
+
 export default function OrderModal({ table, onClose, onSuccess }) {
-  const { user } = useAuth();
-  const [menuItems, setMenuItems] = useState([]);
-  const [cart, setCart] = useState([]);
+  const { user }          = useAuth();
+  const [menuItems, setMenuItems]       = useState([]);
+  const [cart, setCart]                 = useState([]);
   const [activeCategory, setActiveCategory] = useState('All');
-  const [search, setSearch] = useState('');
-  const [noteModal, setNoteModal] = useState(null);
-  const [noteText, setNoteText] = useState('');
+  const [search, setSearch]             = useState('');
+  const [noteModal, setNoteModal]       = useState(null); // item name
+  const [noteText, setNoteText]         = useState('');
   const [existingOrder, setExistingOrder] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]           = useState(false);
+  const [mobileTab, setMobileTab]       = useState('menu'); // 'menu' | 'cart'
 
   useEffect(() => {
     axios.get('/api/menu?available=true').then(r => setMenuItems(r.data));
-    // Load existing order if table is occupied
     if (table.status === 'occupied') {
-      axios.get(`/api/orders?active=true`).then(r => {
+      axios.get('/api/orders?active=true').then(r => {
         const found = r.data.find(o => o.tableNumber === table.tableNumber);
         if (found) {
           setExistingOrder(found);
@@ -37,32 +305,29 @@ export default function OrderModal({ table, onClose, onSuccess }) {
 
   const addToCart = (item) => {
     setCart(prev => {
-      const existing = prev.find(c => c.menuItemId === item._id || c.name === item.name);
+      const existing = prev.find(c => c.name === item.name);
       if (existing) {
-        return prev.map(c => (c.name === item.name ? { ...c, quantity: c.quantity + 1 } : c));
+        return prev.map(c => c.name === item.name ? { ...c, quantity: c.quantity + 1 } : c);
       }
       return [...prev, { menuItemId: item._id, name: item.name, price: item.price, quantity: 1, notes: '' }];
     });
   };
 
   const updateQty = (name, delta) => {
-    setCart(prev => {
-      const updated = prev.map(c => c.name === name ? { ...c, quantity: c.quantity + delta } : c);
-      return updated.filter(c => c.quantity > 0);
-    });
+    setCart(prev =>
+      prev.map(c => c.name === name ? { ...c, quantity: c.quantity + delta } : c)
+          .filter(c => c.quantity > 0)
+    );
   };
 
-  const openNote = (item) => {
-    setNoteModal(item.name);
-    setNoteText(item.notes || '');
-  };
-
+  const openNote = (item) => { setNoteModal(item.name); setNoteText(item.notes || ''); };
   const saveNote = () => {
     setCart(prev => prev.map(c => c.name === noteModal ? { ...c, notes: noteText } : c));
     setNoteModal(null);
   };
 
   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
 
   const handleSubmit = async () => {
     if (cart.length === 0) { toast.error('Add at least one item'); return; }
@@ -73,9 +338,9 @@ export default function OrderModal({ table, onClose, onSuccess }) {
         toast.success('Order updated & sent to kitchen!');
       } else {
         await axios.post('/api/orders', {
-          tableId: table._id,
-          tableNumber: table.tableNumber,
-          items: cart,
+          tableId:       table._id,
+          tableNumber:   table.tableNumber,
+          items:         cart,
           customerCount: table.customerCount || 1,
         });
         toast.success('Order placed & sent to kitchen!');
@@ -88,132 +353,196 @@ export default function OrderModal({ table, onClose, onSuccess }) {
     }
   };
 
-  const catColors = {
-    'Starters': '#FF6B35', 'Main Course': '#3182ce', 'Drinks': '#38a169',
-    'Desserts': '#805ad5', 'Fast Food': '#e53e3e', 'Special Items': '#ED8936'
-  };
+  /* ── Shared cart panel content ── */
+  const CartContent = () => (
+    <>
+      {cart.length === 0 ? (
+        <div className="om-empty-cart">
+          <div style={{ fontSize: 40 }}>🛒</div>
+          <p>No items added yet.</p>
+          <p className="text-sm text-muted">Select items from the menu.</p>
+        </div>
+      ) : (
+        <>
+          <div className="om-cart-items">
+            {cart.map(item => (
+              <div key={item.name} className="om-cart-item">
+                <div className="om-cart-item-info">
+                  <div className="om-cart-item-name">{item.name}</div>
+                  <div className="text-sm text-muted">₹{item.price} each</div>
+                  {item.notes && (
+                    <div className="om-item-note">📝 {item.notes}</div>
+                  )}
+                  <button className="om-note-btn" onClick={() => openNote(item)}>
+                    {item.notes ? '✏️ Edit note' : '+ Add note'}
+                  </button>
+                </div>
+                <div className="om-cart-item-right">
+                  <div className="om-qty-control">
+                    <button className="om-qty-btn" onClick={() => updateQty(item.name, -1)}>−</button>
+                    <span className="om-qty-num">{item.quantity}</span>
+                    <button className="om-qty-btn" onClick={() => updateQty(item.name, 1)}>+</button>
+                  </div>
+                  <strong className="om-item-total">₹{item.price * item.quantity}</strong>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="om-cart-summary">
+            <div className="om-summary-row">
+              <span className="text-muted">Subtotal</span>
+              <span>₹{cartTotal}</span>
+            </div>
+            <div className="om-summary-row">
+              <span className="text-muted">GST (5%)</span>
+              <span>₹{Math.round(cartTotal * 0.05)}</span>
+            </div>
+            <div className="om-summary-row om-total-row">
+              <span>Total</span>
+              <strong>₹{cartTotal + Math.round(cartTotal * 0.05)}</strong>
+            </div>
+          </div>
+        </>
+      )}
+
+      <div className="om-cart-footer">
+        <button
+          className="btn btn-primary btn-lg om-submit-btn"
+          onClick={handleSubmit}
+          disabled={loading || cart.length === 0}
+        >
+          {loading ? '⏳ Sending…' : existingOrder ? '🔄 Update Order' : '✅ Send to Kitchen'}
+        </button>
+      </div>
+    </>
+  );
 
   return (
-    <div className="modal-overlay" style={{ alignItems: 'stretch', padding: 0 }}>
-      <div style={{ display: 'flex', width: '100%', height: '100vh', background: 'white', position: 'relative' }}>
-        {/* Left: Menu */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid #E2E8F0', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', background: 'white' }}>
-            <div className="flex-between">
-              <h2 style={{ fontFamily: 'Inter', fontSize: '1.1rem', fontWeight: 700 }}>
-                🍽️ Menu — Table T{table.tableNumber}
-                {table.customerCount && <span className="text-muted text-sm" style={{ marginLeft: 8 }}>({table.customerCount} guests)</span>}
-              </h2>
-              <button className="btn btn-ghost btn-sm" onClick={onClose}>✕ Close</button>
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <input className="form-input" placeholder="Search menu..." value={search}
-                onChange={e => setSearch(e.target.value)} style={{ marginBottom: 10 }} />
-              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+    <div className="modal-overlay om-overlay">
+      <div className="om-container">
+
+        {/* ── Header ── */}
+        <div className="om-header">
+          <div className="om-header-info">
+            <span className="om-header-table">T{table.tableNumber}</span>
+            {table.customerCount && (
+              <span className="text-sm text-muted">· {table.customerCount} guests</span>
+            )}
+            {existingOrder && (
+              <span className="om-existing-badge">Editing order #{existingOrder.orderNumber}</span>
+            )}
+          </div>
+          <button className="btn btn-ghost btn-sm om-close-btn" onClick={onClose}>✕ Close</button>
+        </div>
+
+        {/* ── Mobile tabs ── */}
+        <div className="om-mobile-tabs">
+          <button
+            className={`om-tab${mobileTab === 'menu' ? ' om-tab-active' : ''}`}
+            onClick={() => setMobileTab('menu')}
+          >
+            🍽️ Menu
+          </button>
+          <button
+            className={`om-tab${mobileTab === 'cart' ? ' om-tab-active' : ''}`}
+            onClick={() => setMobileTab('cart')}
+          >
+            🛒 Cart
+            {cartCount > 0 && <span className="om-tab-badge">{cartCount}</span>}
+          </button>
+        </div>
+
+        {/* ── Desktop: side-by-side | Mobile: tabbed ── */}
+        <div className="om-body">
+
+          {/* Menu panel */}
+          <div className={`om-menu-panel${mobileTab === 'cart' ? ' om-panel-hidden' : ''}`}>
+            <div className="om-menu-search-bar">
+              <input
+                className="form-input"
+                placeholder="Search menu…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+              <div className="om-category-scroll">
                 {CATEGORIES.map(cat => (
-                  <button key={cat} onClick={() => setActiveCategory(cat)}
-                    className={`btn btn-sm ${activeCategory === cat ? 'btn-primary' : 'btn-ghost'}`}
-                    style={{ whiteSpace: 'nowrap', fontSize: 12 }}>{cat}</button>
+                  <button
+                    key={cat}
+                    className={`btn btn-sm${activeCategory === cat ? ' btn-primary' : ' btn-ghost'} om-cat-btn`}
+                    onClick={() => setActiveCategory(cat)}
+                  >
+                    {cat}
+                  </button>
                 ))}
               </div>
             </div>
-          </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-              {filtered.map(item => {
-                const inCart = cart.find(c => c.name === item.name);
-                return (
-                  <div key={item._id} style={{
-                    border: `2px solid ${inCart ? '#FF6B35' : '#E2E8F0'}`,
-                    borderRadius: 10, padding: 14, background: inCart ? '#fff3ee' : 'white',
-                    transition: 'all 0.2s', cursor: 'pointer'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: catColors[item.category] || '#718096', letterSpacing: '0.05em' }}>{item.category}</div>
-                      <strong style={{ color: '#FF6B35', fontSize: 14 }}>₹{item.price}</strong>
-                    </div>
-                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>{item.name}</div>
-                    <div style={{ fontSize: 11, color: '#718096', marginBottom: 10 }}>{item.description}</div>
-                    {inCart ? (
-                      <div className="qty-control" style={{ justifyContent: 'center' }}>
-                        <button className="qty-btn" onClick={() => updateQty(item.name, -1)}>−</button>
-                        <span className="qty-num">{inCart.quantity}</span>
-                        <button className="qty-btn" onClick={() => updateQty(item.name, 1)}>+</button>
+            <div className="om-menu-grid-wrapper">
+              {filtered.length === 0 ? (
+                <div className="empty-state"><p>No items match your search.</p></div>
+              ) : (
+                <div className="om-menu-grid">
+                  {filtered.map(item => {
+                    const inCart = cart.find(c => c.name === item.name);
+                    return (
+                      <div
+                        key={item._id}
+                        className={`om-menu-item${inCart ? ' om-menu-item-selected' : ''}`}
+                      >
+                        <div className="om-menu-item-top">
+                          <span
+                            className="om-menu-item-cat"
+                            style={{ color: CAT_COLORS[item.category] || '#718096' }}
+                          >
+                            {item.category}
+                          </span>
+                          <strong className="om-menu-item-price">₹{item.price}</strong>
+                        </div>
+                        <div className="om-menu-item-name">{item.name}</div>
+                        {item.description && (
+                          <div className="om-menu-item-desc">{item.description}</div>
+                        )}
+                        {inCart ? (
+                          <div className="om-menu-qty-control">
+                            <button className="om-qty-btn" onClick={() => updateQty(item.name, -1)}>−</button>
+                            <span className="om-qty-num">{inCart.quantity}</span>
+                            <button className="om-qty-btn" onClick={() => updateQty(item.name, 1)}>+</button>
+                          </div>
+                        ) : (
+                          <button
+                            className="btn btn-primary om-add-btn"
+                            onClick={() => { addToCart(item); }}
+                          >
+                            + Add
+                          </button>
+                        )}
                       </div>
-                    ) : (
-                      <button className="btn btn-primary w-full" style={{ fontSize: 12, padding: '6px 10px' }} onClick={() => addToCart(item)}>
-                        + Add
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            {filtered.length === 0 && <div className="empty-state"><p>No items found</p></div>}
-          </div>
-        </div>
-
-        {/* Right: Cart */}
-        <div style={{ width: 340, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
-            <h3 style={{ fontFamily: 'Inter', fontWeight: 700, fontSize: '1rem' }}>
-              🛒 Order Cart <span className="text-muted text-sm">({cart.length} items)</span>
-            </h3>
-          </div>
-
-          <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-            {cart.length === 0 ? (
-              <div className="empty-state" style={{ padding: '40px 20px' }}>
-                <div className="icon">🛒</div>
-                <p className="text-sm">No items added yet.<br />Select from menu.</p>
-              </div>
-            ) : (
-              cart.map(item => (
-                <div key={item.name} className="cart-item" style={{ padding: '10px 0' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{item.name}</div>
-                    <div style={{ fontSize: 12, color: '#718096' }}>₹{item.price} each</div>
-                    {item.notes && (
-                      <div style={{ fontSize: 11, color: '#FF6B35', fontStyle: 'italic', marginTop: 2 }}>
-                        📝 {item.notes}
-                      </div>
-                    )}
-                    <button onClick={() => openNote(item)} style={{ fontSize: 11, color: '#3182ce', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', marginTop: 2 }}>
-                      {item.notes ? '✏️ Edit note' : '+ Add note'}
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                    <div className="qty-control">
-                      <button className="qty-btn" style={{ width: 24, height: 24 }} onClick={() => updateQty(item.name, -1)}>−</button>
-                      <span className="qty-num" style={{ fontSize: 13 }}>{item.quantity}</span>
-                      <button className="qty-btn" style={{ width: 24, height: 24 }} onClick={() => updateQty(item.name, 1)}>+</button>
-                    </div>
-                    <strong style={{ fontSize: 13, color: '#FF6B35' }}>₹{item.price * item.quantity}</strong>
-                  </div>
+                    );
+                  })}
                 </div>
-              ))
+              )}
+            </div>
+
+            {/* Mobile floating cart button — visible only when on menu tab and cart has items */}
+            {cartCount > 0 && (
+              <button
+                className="om-float-cart-btn"
+                onClick={() => setMobileTab('cart')}
+              >
+                🛒 View Cart — {cartCount} items · ₹{cartTotal + Math.round(cartTotal * 0.05)}
+              </button>
             )}
           </div>
 
-          <div style={{ padding: 16, borderTop: '1px solid #E2E8F0' }}>
-            <div className="flex-between" style={{ marginBottom: 8, fontSize: 13 }}>
-              <span className="text-muted">Subtotal</span><span>₹{cartTotal}</span>
-            </div>
-            <div className="flex-between" style={{ marginBottom: 12, fontSize: 13 }}>
-              <span className="text-muted">GST (5%)</span><span>₹{Math.round(cartTotal * 0.05)}</span>
-            </div>
-            <div className="flex-between font-bold" style={{ fontSize: '1rem', marginBottom: 16 }}>
-              <span>Total</span><span style={{ color: '#FF6B35' }}>₹{cartTotal + Math.round(cartTotal * 0.05)}</span>
-            </div>
-            <button className="btn btn-primary w-full btn-lg" onClick={handleSubmit} disabled={loading || cart.length === 0}>
-              {loading ? 'Sending...' : existingOrder ? '🔄 Update Order' : '✅ Send to Kitchen'}
-            </button>
+          {/* Cart panel */}
+          <div className={`om-cart-panel${mobileTab === 'menu' ? ' om-panel-hidden' : ''}`}>
+            <CartContent />
           </div>
         </div>
       </div>
 
-      {/* Note modal */}
+      {/* ── Note modal ── */}
       {noteModal && (
         <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setNoteModal(null)}>
           <div className="modal" style={{ maxWidth: 380 }} onClick={e => e.stopPropagation()}>
@@ -223,12 +552,23 @@ export default function OrderModal({ table, onClose, onSuccess }) {
             </div>
             <div className="modal-body">
               <p className="text-sm text-muted" style={{ marginBottom: 12 }}>For: <strong>{noteModal}</strong></p>
-              <textarea className="form-textarea" placeholder="e.g. Extra spicy, No onion, Less oil, Jain preparation..."
-                value={noteText} onChange={e => setNoteText(e.target.value)} style={{ height: 100 }} autoFocus />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+              <textarea
+                className="form-textarea"
+                placeholder="e.g. Extra spicy, No onion, Less oil, Jain preparation…"
+                value={noteText}
+                onChange={e => setNoteText(e.target.value)}
+                style={{ height: 100 }}
+                autoFocus
+              />
+              <div className="om-note-chips">
                 {['Extra spicy', 'Less spicy', 'No onion', 'Less oil', 'Less salt', 'Jain preparation', 'Pack separately', 'Well done'].map(s => (
-                  <button key={s} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}
-                    onClick={() => setNoteText(p => p ? p + ', ' + s : s)}>{s}</button>
+                  <button
+                    key={s}
+                    className="btn btn-ghost btn-sm om-note-chip"
+                    onClick={() => setNoteText(p => p ? p + ', ' + s : s)}
+                  >
+                    {s}
+                  </button>
                 ))}
               </div>
             </div>
