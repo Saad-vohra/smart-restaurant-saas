@@ -193,61 +193,85 @@ export default function WaiterTables() {
   const occupied  = tables.filter(t => t.status === 'occupied').length;
   const reserved  = tables.filter(t => t.status === 'reserved').length;
 
+  const statusConfig = {
+    available: { label: 'Free',     color: '#276749', bg: '#f0fff4', border: '#68d391', dot: '#38a169', cta: 'Tap to order' },
+    occupied:  { label: 'Occupied', color: '#c05621', bg: '#fff3ee', border: '#F6AD55', dot: '#FF6B35', cta: 'Add items'    },
+    reserved:  { label: 'Reserved', color: '#744210', bg: '#fffff0', border: '#FBD38D', dot: '#ED8936', cta: null           },
+  };
+
   return (
     <div>
-      {/* ── Page header ── */}
+      {/* ── Header ── */}
       <div className="page-header">
         <h1>Tables</h1>
-        <div className="wt-stats-row">
-          <span className="wt-stat wt-stat-available">✅ {available} Free</span>
-          <span className="wt-stat wt-stat-occupied">🔴 {occupied} Busy</span>
-          {reserved > 0 && <span className="wt-stat wt-stat-reserved">⏳ {reserved} Reserved</span>}
+        <div className="wt-legend">
+          <span className="wt-legend-dot" style={{ background: '#38a169' }} />
+          <span>{available} Free</span>
+          <span className="wt-legend-dot" style={{ background: '#FF6B35', marginLeft: 10 }} />
+          <span>{occupied} Busy</span>
+          {reserved > 0 && (
+            <>
+              <span className="wt-legend-dot" style={{ background: '#ED8936', marginLeft: 10 }} />
+              <span>{reserved} Reserved</span>
+            </>
+          )}
         </div>
       </div>
 
       <div className="page-body">
-        {/* ── Helper tip ── */}
-        <div className="wt-tip-card">
-          <span>Tap a <strong className="text-green">green</strong> table to start an order · tap an <strong className="text-orange">orange</strong> table to add items</span>
+        {/* ── Hint bar ── */}
+        <div className="wt-hint">
+          Tap a <strong style={{ color: '#276749' }}>green</strong> table to start an order &nbsp;·&nbsp;
+          tap an <strong style={{ color: '#c05621' }}>orange</strong> table to add items
         </div>
 
-        {/* ── Loading state ── */}
+        {/* ── Loading ── */}
         {loading ? (
-          <div className="empty-state card">
-            <div className="spinner" style={{ margin: '0 auto 12px' }} />
-            <p>Loading tables…</p>
-          </div>
+          <div className="loading-center"><div className="spinner" /></div>
         ) : tables.length === 0 ? (
           <div className="empty-state card">
             <div className="icon">🪑</div>
-            <p>No tables found. Ask your admin to add tables.</p>
+            <p>No tables yet. Ask your admin to add tables.</p>
           </div>
         ) : (
-          /* ── Table grid ── */
-          <div className="wt-table-grid">
+          <div className="wt-grid">
             {tables.map(t => {
-              const isAvailable = t.status === 'available';
-              const isOccupied  = t.status === 'occupied';
-              const isReserved  = t.status === 'reserved';
+              const cfg = statusConfig[t.status] || statusConfig.reserved;
+              const clickable = t.status !== 'reserved';
               return (
                 <button
                   key={t._id}
-                  className={`wt-table-card wt-table-${t.status}`}
-                  onClick={() => handleTableClick(t)}
-                  disabled={isReserved}
+                  className="wt-card"
+                  style={{
+                    background: cfg.bg,
+                    borderColor: cfg.border,
+                    cursor: clickable ? 'pointer' : 'not-allowed',
+                    opacity: t.status === 'reserved' ? 0.65 : 1,
+                  }}
+                  onClick={() => clickable && handleTableClick(t)}
+                  disabled={!clickable}
                   aria-label={`Table ${t.tableNumber}, ${t.status}`}
                 >
-                  <div className="wt-table-label">TABLE</div>
-                  <div className="wt-table-number">T{t.tableNumber}</div>
-                  <div className={`wt-table-status-badge wt-status-${t.status}`}>
-                    {isAvailable ? '● Free' : isOccupied ? '● Busy' : '⏳ Reserved'}
+                  <div className="wt-card-label">TABLE</div>
+                  <div className="wt-card-number">T{t.tableNumber}</div>
+
+                  <div className="wt-card-status">
+                    <span className="wt-card-dot" style={{ background: cfg.dot }} />
+                    <span style={{ color: cfg.color, fontWeight: 700, fontSize: 12 }}>{cfg.label}</span>
                   </div>
-                  <div className="wt-table-cap">Cap: {t.capacity}</div>
-                  {isOccupied && t.customerCount > 0 && (
-                    <div className="wt-table-guests">👥 {t.customerCount} guests</div>
+
+                  <div className="wt-card-cap">
+                    <span>👤</span> {t.capacity} seats
+                  </div>
+
+                  {t.status === 'occupied' && t.customerCount > 0 && (
+                    <div className="wt-card-guests">👥 {t.customerCount} guests</div>
                   )}
-                  {isAvailable && (
-                    <div className="wt-table-cta">Tap to order</div>
+
+                  {cfg.cta && (
+                    <div className="wt-card-cta" style={{ color: cfg.color }}>
+                      {cfg.cta} →
+                    </div>
                   )}
                 </button>
               );
@@ -259,24 +283,25 @@ export default function WaiterTables() {
       {/* ── Customer count modal ── */}
       {showCustomerModal && pendingTable && (
         <div className="modal-overlay" onClick={() => setShowCustomerModal(false)}>
-          <div className="modal wt-customer-modal" onClick={e => e.stopPropagation()}>
+          <div className="modal wt-guest-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Start Order — Table T{pendingTable.tableNumber}</h3>
+              <h3>🪑 Table T{pendingTable.tableNumber}</h3>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowCustomerModal(false)}>✕</button>
             </div>
             <div className="modal-body">
-              <p className="text-sm text-muted" style={{ marginBottom: 16 }}>
-                How many guests at this table?
-              </p>
-              <div className="wt-qty-row">
+              <p className="text-sm text-muted" style={{ marginBottom: 20 }}>How many guests are seated?</p>
+              <div className="wt-guest-picker">
                 <button
-                  className="wt-qty-btn"
+                  className="wt-guest-btn"
                   onClick={() => setCustomerCount(c => Math.max(1, c - 1))}
                   aria-label="Decrease"
                 >−</button>
-                <span className="wt-qty-num">{customerCount}</span>
+                <div className="wt-guest-count">
+                  <span className="wt-guest-num">{customerCount}</span>
+                  <span className="wt-guest-sub">guests</span>
+                </div>
                 <button
-                  className="wt-qty-btn"
+                  className="wt-guest-btn"
                   onClick={() => setCustomerCount(c => Math.min(pendingTable.capacity, c + 1))}
                   aria-label="Increase"
                 >+</button>
@@ -287,7 +312,7 @@ export default function WaiterTables() {
             </div>
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={() => setShowCustomerModal(false)}>Cancel</button>
-              <button className="btn btn-primary btn-lg wt-start-btn" onClick={startOrder}>
+              <button className="btn btn-primary btn-lg" style={{ flex: 1 }} onClick={startOrder}>
                 Start Order →
               </button>
             </div>

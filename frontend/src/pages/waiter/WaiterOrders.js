@@ -183,9 +183,9 @@ const STATUS_ICON = {
 };
 
 export default function WaiterOrders() {
-  const [orders, setOrders]   = useState([]);
+  const [orders, setOrders]     = useState([]);
   const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]   = useState(true);
   const socket = useSocket();
 
   const load = async () => {
@@ -207,7 +207,7 @@ export default function WaiterOrders() {
       setOrders(prev => prev.map(o => o._id === updated._id ? updated : o));
       if (selected?._id === updated._id) setSelected(updated);
       if (updated.status === 'ready') {
-        toast.success(`🔔 Order #${updated.orderNumber} (T${updated.tableNumber}) is READY!`, { duration: 6000 });
+        toast.success(`🔔 Order #${updated.orderNumber} — Table T${updated.tableNumber} is READY!`, { duration: 6000 });
       }
     });
     return () => socket.off('order-status-updated');
@@ -216,7 +216,7 @@ export default function WaiterOrders() {
   const markServed = async (id) => {
     try {
       await axios.put(`/api/orders/${id}/status`, { status: 'served' });
-      toast.success('Order marked as served ✓');
+      toast.success('Marked as served ✓');
       setSelected(null);
       load();
     } catch {
@@ -225,153 +225,195 @@ export default function WaiterOrders() {
   };
 
   const readyOrders  = orders.filter(o => o.status === 'ready');
-  const activeOrders = orders.filter(o => o.status !== 'ready');
-
-  const fmt = (iso) =>
-    new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const otherOrders  = orders.filter(o => o.status !== 'ready');
+  const fmt = iso => new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div>
-      {/* ── Page header ── */}
+      {/* ── Header ── */}
       <div className="page-header">
         <h1>My Orders</h1>
-        <span className="text-sm text-muted">
-          {orders.length} active
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="text-sm text-muted">{orders.length} active</span>
           {readyOrders.length > 0 && (
-            <span className="wo-ready-pill">{readyOrders.length} ready!</span>
+            <span className="wo-ready-pill">
+              🔔 {readyOrders.length} ready!
+            </span>
           )}
-        </span>
+        </div>
       </div>
 
       <div className="page-body">
-
-        {/* ── Loading ── */}
         {loading ? (
-          <div className="empty-state card">
-            <div className="spinner" style={{ margin: '0 auto 12px' }} />
-            <p>Loading orders…</p>
-          </div>
+          <div className="loading-center"><div className="spinner" /></div>
         ) : orders.length === 0 ? (
           <div className="empty-state card">
             <div className="icon">📋</div>
-            <p>No active orders right now.</p>
+            <p style={{ fontWeight: 600, marginBottom: 4 }}>No active orders</p>
             <p className="text-sm text-muted">Go to Tables to start a new order.</p>
           </div>
         ) : (
           <>
-            {/* ── Ready to Serve banner ── */}
+            {/* ── Ready-to-serve alert ── */}
             {readyOrders.length > 0 && (
               <div className="wo-ready-banner">
-                <div className="wo-ready-banner-title">
-                  🔔 Ready to Serve — {readyOrders.length} order{readyOrders.length > 1 ? 's' : ''}
-                </div>
-                <div className="wo-ready-list">
-                  {readyOrders.map(o => (
-                    <div key={o._id} className="wo-ready-item">
-                      <div className="wo-ready-item-info">
-                        <span className="wo-order-num">#{o.orderNumber}</span>
-                        <span className="wo-table-badge">T{o.tableNumber}</span>
-                        <span className="text-sm text-muted">{o.items.length} items · ₹{o.totalAmount}</span>
-                      </div>
-                      <button
-                        className="btn btn-success wo-serve-btn"
-                        onClick={() => markServed(o._id)}
-                      >
-                        ✓ Served
-                      </button>
+                <div className="wo-ready-title">🔔 Ready to Serve</div>
+                {readyOrders.map(o => (
+                  <div key={o._id} className="wo-ready-row">
+                    <div className="wo-ready-info">
+                      <span className="wo-order-num">#{o.orderNumber}</span>
+                      <span className="wo-table-chip">T{o.tableNumber}</span>
+                      <span className="text-sm text-muted">{o.items.length} items · ₹{o.totalAmount}</span>
                     </div>
-                  ))}
-                </div>
+                    <button className="btn btn-success wo-serve-btn" onClick={() => markServed(o._id)}>
+                      ✓ Served
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
 
-            {/* ── Order cards ── */}
-            <div className="wo-order-list">
-              {orders.map(o => (
-                <div
-                  key={o._id}
-                  className={`wo-order-card${selected?._id === o._id ? ' selected' : ''}`}
-                  onClick={() => setSelected(selected?._id === o._id ? null : o)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={e => e.key === 'Enter' && setSelected(selected?._id === o._id ? null : o)}
-                  aria-expanded={selected?._id === o._id}
-                >
-                  {/* Card top row */}
-                  <div className="wo-card-top">
-                    <div className="wo-card-left">
-                      <span className="wo-order-num">#{o.orderNumber}</span>
-                      <span className="wo-table-badge">T{o.tableNumber}</span>
+            {/* ── Orders list + desktop side panel ── */}
+            <div className="wo-layout" style={{ gridTemplateColumns: selected ? '1fr 340px' : '1fr' }}>
+
+              {/* Cards column */}
+              <div className="wo-cards">
+                {orders.map(o => (
+                  <div
+                    key={o._id}
+                    className={`wo-card${selected?._id === o._id ? ' wo-card-selected' : ''}`}
+                    onClick={() => setSelected(selected?._id === o._id ? null : o)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => e.key === 'Enter' && setSelected(selected?._id === o._id ? null : o)}
+                  >
+                    {/* Top row */}
+                    <div className="wo-card-top">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="wo-order-num">#{o.orderNumber}</span>
+                        <span className="wo-table-chip">T{o.tableNumber}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className={`badge ${STATUS_COLORS[o.status]}`}>
+                          {STATUS_ICON[o.status]} {o.status}
+                        </span>
+                        <strong style={{ color: '#FF6B35' }}>₹{o.totalAmount}</strong>
+                      </div>
                     </div>
-                    <div className="wo-card-right">
-                      <span className={`badge ${STATUS_COLORS[o.status]}`}>
-                        {STATUS_ICON[o.status]} {o.status}
-                      </span>
-                      <strong className="wo-amount">₹{o.totalAmount}</strong>
+
+                    {/* Items preview */}
+                    <div className="wo-card-items">
+                      {o.items.slice(0, 3).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
+                      {o.items.length > 3 && ` +${o.items.length - 3} more`}
                     </div>
-                  </div>
 
-                  {/* Items preview */}
-                  <div className="wo-card-items">
-                    {o.items.slice(0, 3).map(i => `${i.name} ×${i.quantity}`).join(' · ')}
-                    {o.items.length > 3 && ` +${o.items.length - 3} more`}
-                  </div>
-
-                  {/* Footer row */}
-                  <div className="wo-card-footer">
-                    <span className="text-sm text-muted">🕐 {fmt(o.createdAt)}</span>
-                    {o.customerCount > 0 && (
-                      <span className="text-sm text-muted">👥 {o.customerCount} guests</span>
-                    )}
-                    <span className="wo-expand-hint">
-                      {selected?._id === o._id ? '▲ Less' : '▼ Details'}
-                    </span>
-                  </div>
-
-                  {/* Expanded detail — inline on mobile */}
-                  {selected?._id === o._id && (
-                    <div className="wo-card-detail" onClick={e => e.stopPropagation()}>
-                      <hr className="wo-detail-divider" />
-                      <div className="wo-detail-meta">
-                        <div className="wo-detail-row">
-                          <span className="text-muted">Customers</span>
-                          <span>{o.customerCount}</span>
-                        </div>
-                        <div className="wo-detail-row">
-                          <span className="text-muted">Status</span>
-                          <span className={`badge ${STATUS_COLORS[o.status]}`}>{o.status}</span>
-                        </div>
-                      </div>
-                      <div className="wo-detail-items">
-                        {o.items.map((item, i) => (
-                          <div key={i} className="wo-detail-item">
-                            <div className="wo-detail-item-name">
-                              <span>{item.name}</span>
-                              {item.notes && (
-                                <span className="wo-item-note">📝 {item.notes}</span>
-                              )}
-                            </div>
-                            <span className="wo-detail-item-qty">×{item.quantity}</span>
-                            <strong className="wo-detail-item-price">₹{item.price * item.quantity}</strong>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="wo-detail-total">
-                        <span>Total</span>
-                        <strong>₹{o.totalAmount}</strong>
-                      </div>
-                      {o.status === 'ready' && (
-                        <button
-                          className="btn btn-success w-full wo-serve-big-btn"
-                          onClick={() => markServed(o._id)}
-                        >
-                          ✓ Mark as Served
-                        </button>
+                    {/* Footer */}
+                    <div className="wo-card-foot">
+                      <span className="text-sm text-muted">🕐 {fmt(o.createdAt)}</span>
+                      {o.customerCount > 0 && (
+                        <span className="text-sm text-muted">👥 {o.customerCount}</span>
+                      )}
+                      {/* Mobile-only: inline expand detail */}
+                      {selected?._id === o._id && (
+                        <span className="wo-collapse-hint">▲ Hide</span>
                       )}
                     </div>
+
+                    {/* Inline expanded detail — only on mobile */}
+                    {selected?._id === o._id && (
+                      <div className="wo-inline-detail" onClick={e => e.stopPropagation()}>
+                        <hr className="wo-hr" />
+                        <div className="wo-detail-meta">
+                          <div className="wo-detail-row">
+                            <span className="text-muted">Status</span>
+                            <span className={`badge ${STATUS_COLORS[o.status]}`}>{o.status}</span>
+                          </div>
+                          <div className="wo-detail-row">
+                            <span className="text-muted">Guests</span>
+                            <span>{o.customerCount}</span>
+                          </div>
+                        </div>
+                        {o.items.map((item, i) => (
+                          <div key={i} className="wo-detail-item">
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 600, fontSize: 13 }}>{item.name}</div>
+                              {item.notes && (
+                                <div style={{ fontSize: 11, color: '#FF6B35', fontStyle: 'italic' }}>📝 {item.notes}</div>
+                              )}
+                            </div>
+                            <span style={{ fontSize: 13, color: '#718096' }}>×{item.quantity}</span>
+                            <strong style={{ fontSize: 13, color: '#FF6B35' }}>₹{item.price * item.quantity}</strong>
+                          </div>
+                        ))}
+                        <div className="wo-detail-total">
+                          <span>Total</span>
+                          <strong style={{ color: '#FF6B35' }}>₹{o.totalAmount}</strong>
+                        </div>
+                        {o.status === 'ready' && (
+                          <button
+                            className="btn btn-success"
+                            style={{ width: '100%', minHeight: 48, marginTop: 8, fontSize: 15 }}
+                            onClick={() => markServed(o._id)}
+                          >
+                            ✓ Mark as Served
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop side detail panel */}
+              {selected && (
+                <div className="card wo-side-panel">
+                  <div className="flex-between" style={{ marginBottom: 16 }}>
+                    <h3 style={{ fontFamily: 'Inter', fontWeight: 700, fontSize: '1rem' }}>
+                      Order #{selected.orderNumber}
+                    </h3>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}>✕</button>
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <div className="flex-between text-sm" style={{ marginBottom: 6 }}>
+                      <span className="text-muted">Table</span><strong>T{selected.tableNumber}</strong>
+                    </div>
+                    <div className="flex-between text-sm" style={{ marginBottom: 6 }}>
+                      <span className="text-muted">Customers</span><span>{selected.customerCount}</span>
+                    </div>
+                    <div className="flex-between text-sm">
+                      <span className="text-muted">Status</span>
+                      <span className={`badge ${STATUS_COLORS[selected.status]}`}>{selected.status}</span>
+                    </div>
+                  </div>
+                  <hr style={{ borderColor: '#E2E8F0', margin: '14px 0' }} />
+                  {selected.items.map((item, i) => (
+                    <div key={i} className="cart-item">
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{item.name}</div>
+                        {item.notes && (
+                          <div style={{ fontSize: 11, color: '#FF6B35', fontStyle: 'italic' }}>📝 {item.notes}</div>
+                        )}
+                      </div>
+                      <span style={{ fontSize: 13 }}>×{item.quantity}</span>
+                      <strong style={{ fontSize: 13, color: '#FF6B35' }}>₹{item.price * item.quantity}</strong>
+                    </div>
+                  ))}
+                  <hr style={{ borderColor: '#E2E8F0', margin: '14px 0' }} />
+                  <div className="flex-between font-bold">
+                    <span>Total</span>
+                    <span style={{ color: '#FF6B35', fontSize: '1.1rem' }}>₹{selected.totalAmount}</span>
+                  </div>
+                  {selected.status === 'ready' && (
+                    <button
+                      className="btn btn-success w-full"
+                      style={{ marginTop: 16 }}
+                      onClick={() => { markServed(selected._id); setSelected(null); }}
+                    >
+                      ✓ Mark as Served
+                    </button>
                   )}
                 </div>
-              ))}
+              )}
             </div>
           </>
         )}
