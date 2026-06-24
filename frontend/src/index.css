@@ -1315,3 +1315,225 @@ tbody tr:hover { background: #FAFAFA; }
   .date-input-w, .year-select-w { width: 100%; }
   .login-card { padding: 28px 20px; }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =====================================
+   WAITER MOBILE RESPONSIVE UI
+===================================== */
+
+
+@media(max-width:768px){
+
+
+/* REMOVE DESKTOP SIDEBAR SPACE */
+
+.app-layout{
+
+display:block;
+
+}
+
+
+
+.sidebar{
+
+display:none;
+
+}
+
+
+
+/* FULL WIDTH CONTENT */
+
+.main-content{
+
+
+width:100% !important;
+
+
+padding:12px;
+
+
+}
+
+
+
+
+
+
+/* MOBILE TOP BAR */
+
+
+.main-content::before{
+
+
+content:"☰     🍽 Delight";
+
+
+display:flex;
+
+
+align-items:center;
+
+
+height:55px;
+
+
+background:#111827;
+
+
+color:white;
+
+
+font-size:20px;
+
+
+font-weight:700;
+
+
+padding-left:15px;
+
+
+border-radius:0 0 15px 15px;
+
+
+margin:-12px -12px 15px -12px;
+
+
+}
+
+
+
+
+
+/* TABLE GRID */
+
+
+.tables-grid{
+
+
+display:grid !important;
+
+
+grid-template-columns:repeat(2,1fr) !important;
+
+
+gap:14px !important;
+
+
+}
+
+
+
+
+
+
+/* TABLE CARD */
+
+
+.table-card{
+
+
+width:100% !important;
+
+
+height:150px !important;
+
+
+border-radius:18px !important;
+
+
+padding:12px !important;
+
+
+}
+
+
+
+
+.table-card h1,
+.table-card h2{
+
+
+font-size:32px !important;
+
+
+}
+
+
+
+.table-card p{
+
+
+font-size:14px;
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+/* SMALL MOBILE */
+
+@media(max-width:420px){
+
+
+
+.tables-grid{
+
+
+gap:10px !important;
+
+
+}
+
+
+
+.table-card{
+
+
+height:135px !important;
+
+
+}
+
+
+
+.table-card h1,
+.table-card h2{
+
+
+font-size:26px !important;
+
+
+}
+
+
+}
