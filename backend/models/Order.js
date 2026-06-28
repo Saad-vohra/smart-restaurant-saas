@@ -55,12 +55,14 @@ const orderItemSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   quantity: { type: Number, required: true },
   notes: { type: String, default: '' },
-  // Track whether this item has already been served to the customer
+  // Whether this batch of the item has been served
   served: { type: Boolean, default: false },
-  // Track when this item was added to the order (to distinguish new items on update)
+  // When this batch entry was added (each waiter update = new batch)
   addedAt: { type: Date, default: Date.now },
-  // Track when this item was marked as served
-  servedAt: { type: Date, default: null }
+  // When this batch was marked served
+  servedAt: { type: Date, default: null },
+  // Which waiter update batch this item belongs to (1 = original order, 2+ = updates)
+  batchNumber: { type: Number, default: 1 }
 });
 
 const orderSchema = new mongoose.Schema({
@@ -75,7 +77,9 @@ const orderSchema = new mongoose.Schema({
   totalAmount: { type: Number, default: 0 },
   customerCount: { type: Number, default: 1 },
   notes: { type: String, default: '' },
-  // Track the timestamp of the latest update so kitchen knows when order was modified
+  // Total number of update batches so far (starts at 1 for original order)
+  batchCount: { type: Number, default: 1 },
+  // Timestamp of last waiter update (null for fresh orders)
   lastUpdatedByWaiter: { type: Date, default: null }
 }, { timestamps: true });
 
